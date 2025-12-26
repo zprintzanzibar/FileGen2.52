@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ZPRINT WO Tool – Ultra Safe v2.4.5</title>
+<style>
+body{font-family:Arial;padding:20px;max-width:560px}
+label{display:block;margin-top:12px}
+select,input,button{width:100%;padding:8px;margin-top:4px}
+button{margin-top:16px}
+#result{margin-top:20px}
+</style>
+</head>
+<body>
+
+<h2>ZPRINT – Work Order Generator</h2>
+
+<form id="woForm">
+  <label>Category</label>
+  <select id="category" required></select>
+
+  <label>Subcategory</label>
+  <select id="subcategory" required></select>
+
+  <label>Client Name</label>
+  <input id="client" required>
+
+  <label>Client Phone</label>
+  <input list="phoneList" id="phone" required>
+  <datalist id="phoneList"></datalist>
+
+  <label>Description</label>
+  <input id="description">
+
+  <label>Version</label>
+  <input id="version" value="v0">
+
+  <button type="submit">Generate</button>
+</form>
+
+<div id="result" style="display:none">
+  <p><b>Generated Filename</b></p>
+  <input id="filename" readonly>
+  <button type="button" onclick="copyFilename()">COPY</button>
+  <p><a id="labelLink" target="_blank">Download Job Card Label</a></p>
+</div>
+
+<script>
+/* ===== FULL CATEGORY LIST ===== */
+const CATEGORIES = {
+  PVC:{subs:{CLEAR:"Clear",PRC:"Print & Cut",UV:"UV",UVPC:"UV Print & Cut",CUT:"Cutting",PLN:"Plain",GLDC:"Gold Cutting",GLDP:"Gold Plain",ECO:"Eco",CLRPRC:"Clear Print & Cut",FRPL:"Frost Plain",FRCUT:"Frost Cut",FRPRC:"Frost Print & Cut",MAG:"Magnet"}},
+  EMB:{subs:{STD:"Standard",PRM:"Premium"}},
+  CAN:{subs:{COT:"Cotton",UV:"UV",ECO:"Eco",OTH:"Other"}},
+  BAN:{subs:{UV:"UV",ECO:"Eco",TD:"Tear Drop",FECO:"Flag Eco",FUV:"Flag UV",POP:"POP",STD:"Standard",PRM:"Premium"}},
+  MAP:{subs:{NRM:"Normal",PP:"PP",POP:"POP"}},
+  SUB:{subs:{SUB:"Sublimation"}},
+  DTF:{subs:{DTF:"DTF"}},
+  CON:{subs:{UV:"UV",ECO:"Eco",PLN:"Plain"}},
+  FLT:{subs:{UVD:"UV_DTF",PEN:"Pen",NOTE:"Notebook",ACR:"Acrylic"}},
+  PUB:{subs:{FLY:"Flyer",BR:"Brochure",BC:"Business Card",OTH:"Other"}},
+  CUS:{subs:{CUS:"Custom Input"}}
+};
+
+const SCRIPT_URL = "PASTE_APPS_SCRIPT_URL_HERE";
+
+/* ===== DROPDOWNS ===== */
+const category = document.getElementById("category");
+const subcategory = document.getElementById("subcategory");
+
+category.innerHTML = "<option value=''>Select Category</option>";
+subcategory.innerHTML = "<option value=''>Select Subcategory</option>";
+
+Object.keys(CATEGORIES).forEach(c => {
+  const o = document.createElement("option");
+  o.value = c;
+  o.textContent = c;
+  category.appendChild(o);
+});
+
+category.onchange = () => {
+  subcategory.innerHTML = "<option value=''>Select Subcategory</option>";
+  const subs = CATEGORIES[category.value]?.subs || {};
+  Object.keys(subs).forEach(s => {
+    const o = document.createElement("option");
+    o.value = s;
+    o.textContent = s + " - " + subs[s];
+    subcategory.appendChild(o);
+  });
+};
+
+/* ===== PHONE AUTOSUGGEST ===== */
+fetch(`${SCRIPT_URL}?action=getPhones`)
+.then(r=>r.json())
+.then(data=>{
+  const list=document.getElementById("phoneList");
+  data.forEach(p=>{
+    const o=document.createElement("option");
+    o.value=p;
+    list.appendChild(o);
+  });
+})
+.catch(()=>{});
+
+/* ===== SUBMIT ===== */
+document.getElementById("woForm").onsubmit = async e => {
+  e.preventDefault();
+
+  const params = new URLSearchParams({
+    action:"createWO",
+    category:category.value,
+    subcategory:subcategory.value,
+    client:client.value,
+    phone:phone.value,
+    description:description.value,
+    version:version.value || "v0"
+  });
+
+  try {
+    const res = await fetch(`${SCRIPT_URL}?${params}`);
+    const data = await res.json();
+
+    if (!data.filename) {
+      alert("Error: filename not returned from server");
+      return;
+    }
+
+    document.getElementById("filename").value = data.filename;
+    document.getElementById("labelLink").href = data.labelUrl || "#";
+    document.getElementById("result").style.display = "block";
+
+  } catch (err) {
+    alert("Connection error. Check Apps Script URL.");
+  }
+};
+
+function copyFilename(){
+  const f = document.getElementById("filename");
+  f.select();
+  f.setSelectionRange(0, 99999);
+  document.execCommand("copy");
+}
+</script>
+
+</body>
+</html>
