@@ -124,39 +124,50 @@ document.getElementById("woForm").onsubmit = async e => {
       return;
     }
 
-// ===== Reformat filename to ZPRINT standard (WITH DESCRIPTION) =====
-const raw = data.filename;
+// ===== SAFE FINAL FILENAME CONSTRUCTION =====
 
-// Expected raw format from Apps Script:
-// YYYY-MM-DD_CAT-SUB_ClientName_WO-YYYY-XXX_v0
+// Extract reliable values
+const woFull = data.wo || "";              // e.g. WO-2025-016
+const dateISO = data.date || "";           // e.g. 2025-12-27
 
-const parts = raw.split("_");
+// Fallback safety
+if (!woFull || !dateISO) {
+  alert("Missing WO or Date from server response");
+  return;
+}
 
-const datePart   = parts[0]; // YYYY-MM-DD
-const catPart    = parts[1]; // CAT-SUB
-const clientPart = parts[2]; // ClientName
-const woPart     = parts[3]; // WO-YYYY-XXX
-const version    = parts[4]; // v0
+// WO short number
+const woNum = woFull.split("-")[2];         // 016
 
-// Convert date to DDMMYY
-const [yyyy, mm, dd] = datePart.split("-");
+// Date DDMMYY
+const [yyyy, mm, dd] = dateISO.split("-");
 const shortDate = `${dd}${mm}${yyyy.slice(-2)}`;
 
-// Extract WO number (XXX)
-const woNum = woPart.split("-")[2];
+// Category & subcategory from form
+const cat = category.value;
+const sub = subcategory.value;
 
-// Get description from form (sanitize)
-const rawDescription = document.getElementById("description").value || "";
-const description = rawDescription
+// Client
+const clientName = client.value
   .trim()
   .replace(/\s+/g, "")
   .replace(/[^a-zA-Z0-9_-]/g, "");
 
-// Final filename (WITH description)
+// Description
+const desc = description.value
+  .trim()
+  .replace(/\s+/g, "")
+  .replace(/[^a-zA-Z0-9_-]/g, "");
+
+// Version
+const ver = version.value || "v0";
+
+// FINAL LOCKED FORMAT
 const finalFilename =
-  `WO${woNum}_${shortDate}_${catPart}_${clientPart}_${description}_${version}`;
+  `WO${woNum}_${shortDate}_${cat}-${sub}_${clientName}_${desc}_${ver}`;
 
 document.getElementById("filename").value = finalFilename;
+
     document.getElementById("labelLink").href = data.labelUrl || "#";
     document.getElementById("result").style.display = "block";
 
