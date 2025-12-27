@@ -1,4 +1,4 @@
-const SCRIPT_URL = "PASTE_APPS_SCRIPT_URL_HERE";
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyP9TtyqM1vfOnUMaUkIStdHPhXx77fbzgMpnB8sp1SVqxm1oqyRW5wiCPge8kN13U-/exec';
 
 function search() {
   const term = document.getElementById("term").value;
