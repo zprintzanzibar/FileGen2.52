@@ -124,29 +124,37 @@ document.getElementById("woForm").onsubmit = async e => {
       return;
     }
 
-    // ===== Reformat filename to ZPRINT standard =====
+// ===== Reformat filename to ZPRINT standard (WITH DESCRIPTION) =====
 const raw = data.filename;
 
-// Split parts
-// Expected raw: YYYY-MM-DD_CAT-SUB_Client_WO-YYYY-XXX_v0
+// Expected raw format from Apps Script:
+// YYYY-MM-DD_CAT-SUB_ClientName_WO-YYYY-XXX_v0
+
 const parts = raw.split("_");
 
-const datePart = parts[0];              // YYYY-MM-DD
-const catPart  = parts[1];              // CAT-SUB
-const clientPart = parts[2];             // ClientName
-const woPart   = parts[3];               // WO-YYYY-XXX
-const version  = parts[4];               // v0
+const datePart   = parts[0]; // YYYY-MM-DD
+const catPart    = parts[1]; // CAT-SUB
+const clientPart = parts[2]; // ClientName
+const woPart     = parts[3]; // WO-YYYY-XXX
+const version    = parts[4]; // v0
 
 // Convert date to DDMMYY
 const [yyyy, mm, dd] = datePart.split("-");
 const shortDate = `${dd}${mm}${yyyy.slice(-2)}`;
 
-// Extract WO number
-const woNum = woPart.split("-")[2];      // XXX
+// Extract WO number (XXX)
+const woNum = woPart.split("-")[2];
 
-// Final filename
+// Get description from form (sanitize)
+const rawDescription = document.getElementById("description").value || "";
+const description = rawDescription
+  .trim()
+  .replace(/\s+/g, "")
+  .replace(/[^a-zA-Z0-9_-]/g, "");
+
+// Final filename (WITH description)
 const finalFilename =
-  `WO${woNum}_${shortDate}_${catPart}_${clientPart}_${version}`;
+  `WO${woNum}_${shortDate}_${catPart}_${clientPart}_${description}_${version}`;
 
 document.getElementById("filename").value = finalFilename;
     document.getElementById("labelLink").href = data.labelUrl || "#";
