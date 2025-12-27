@@ -1,4 +1,4 @@
-const SCRIPT_URL = 'hhttps://script.google.com/macros/s/AKfycbyPat4Q7LTdv3985ABPYVeMMeEnVUbsFCIBrzhYOmz2EHcr41JFY3W7GA3JM0cslAaN/exec';
+const SCRIPT_URL = "hhttps://script.google.com/macros/s/AKfycbyPat4Q7LTdv3985ABPYVeMMeEnVUbsFCIBrzhYOmz2EHcr41JFY3W7GA3JM0cslAaN/exec";
 
 function search() {
   const term = document.getElementById("term").value;
