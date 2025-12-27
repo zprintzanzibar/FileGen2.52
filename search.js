@@ -1,20 +1,55 @@
-const SCRIPT_URL = "hhttps://script.google.com/macros/s/AKfycbyPat4Q7LTdv3985ABPYVeMMeEnVUbsFCIBrzhYOmz2EHcr41JFY3W7GA3JM0cslAaN/exec";
+/* =========================================
+   ZPRINT v2.6 – SEARCH.JS (CLEAN & SAFE)
+========================================= */
 
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPat4Q7LTdv3985ABPYVeMMeEnVUbsFCIBrzhYOmz2EHcr41JFY3W7GA3JM0cslAaN/exec';
+
+/* ---- sanity check (runs on load) ---- */
+console.log("search.js loaded");
+console.log("SCRIPT_URL:", SCRIPT_URL);
+
+/* ---- search handler ---- */
 function search() {
-  const term = document.getElementById("term").value;
+  const term = document.getElementById("term").value.trim();
   const status = document.getElementById("status").value;
 
-  fetch(`${SCRIPT_URL}?action=searchWO&term=${encodeURIComponent(term)}&status=${status}`)
-    .then(r => r.json())
-    .then(render);
+  console.log("Searching for:", term, "Status:", status);
+
+  const url =
+    SCRIPT_URL +
+    "?action=searchWO" +
+    "&term=" + encodeURIComponent(term) +
+    "&status=" + encodeURIComponent(status);
+
+  console.log("Request URL:", url);
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      console.log("Search result:", data);
+      renderResults(data);
+    })
+    .catch(err => {
+      console.error("Search error:", err);
+      alert("Search failed. Check console.");
+    });
 }
 
-function render(data) {
+/* ---- render table ---- */
+function renderResults(rows) {
   const tbody = document.getElementById("results");
   tbody.innerHTML = "";
 
-  data.forEach(r => {
+  if (!rows || rows.length === 0) {
     const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="6">No results found</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  rows.forEach(r => {
+    const tr = document.createElement("tr");
+
     tr.innerHTML = `
       <td>${r.wo}</td>
       <td>${r.date}</td>
@@ -25,10 +60,16 @@ function render(data) {
         <button onclick="printOne('${r.wo}')">Print</button>
       </td>
     `;
+
     tbody.appendChild(tr);
   });
 }
 
+/* ---- print single job card ---- */
 function printOne(wo) {
-  window.open(`${SCRIPT_URL}?action=printSingle&wo=${wo}`);
+  console.log("Printing WO:", wo);
+  window.open(
+    SCRIPT_URL + "?action=printSingle&wo=" + encodeURIComponent(wo),
+    "_blank"
+  );
 }
