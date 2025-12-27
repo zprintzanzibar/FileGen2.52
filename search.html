@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ZPRINT – WO Search</title>
+<style>
+body{font-family:Arial;padding:20px}
+input,select,button{padding:6px;margin:4px}
+table{width:100%;border-collapse:collapse;margin-top:15px}
+th,td{border:1px solid #ccc;padding:6px;text-align:left}
+</style>
+</head>
+<body>
+
+<h2>ZPRINT – Work Order Search</h2>
+
+<input id="term" placeholder="WO / Client / Phone / Category">
+<select id="status">
+  <option value="">All Status</option>
+  <option>Pending</option>
+  <option>Completed</option>
+</select>
+<button onclick="search()">Search</button>
+
+<table>
+<thead>
+<tr>
+<th>WO</th>
+<th>Date</th>
+<th>Client</th>
+<th>Category</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="results"></tbody>
+</table>
+
+<script src="search.js"></script>
+</body>
+</html>
