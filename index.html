@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>ZPRINT WO Tool – Ultra Safe v2.4.5</title>
+<title>ZPRINT WO Tool – Stable v2.6</title>
 <style>
 body{font-family:Arial;padding:20px;max-width:560px}
 label{display:block;margin-top:12px}
@@ -26,8 +26,7 @@ button{margin-top:16px}
   <input id="client" required>
 
   <label>Client Phone</label>
-  <input list="phoneList" id="phone" required>
-  <datalist id="phoneList"></datalist>
+  <input id="phone" required>
 
   <label>Description</label>
   <input id="description">
@@ -42,11 +41,15 @@ button{margin-top:16px}
   <p><b>Generated Filename</b></p>
   <input id="filename" readonly>
   <button type="button" onclick="copyFilename()">COPY</button>
-  <p><a id="labelLink" target="_blank">Download Job Card Label</a></p>
+  <p>
+    <a id="labelLink" target="_blank">Open Job Card</a>
+  </p>
 </div>
 
 <script>
-/* ===== FULL CATEGORY LIST ===== */
+/* ===============================
+   CATEGORY DEFINITIONS (LOCKED)
+================================ */
 const CATEGORIES = {
   PVC:{subs:{CLEAR:"Clear",PRC:"Print & Cut",UV:"UV",UVPC:"UV Print & Cut",CUT:"Cutting",PLN:"Plain",GLDC:"Gold Cutting",GLDP:"Gold Plain",ECO:"Eco",CLRPRC:"Clear Print & Cut",FRPL:"Frost Plain",FRCUT:"Frost Cut",FRPRC:"Frost Print & Cut",MAG:"Magnet"}},
   EMB:{subs:{STD:"Standard",PRM:"Premium"}},
@@ -61,9 +64,15 @@ const CATEGORIES = {
   CUS:{subs:{CUS:"Custom Input"}}
 };
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPat4Q7LTdv3985ABPYVeMMeEnVUbsFCIBrzhYOmz2EHcr41JFY3W7GA3JM0cslAaN/exec';
+/* ===============================
+   BACKEND URL (LOCKED)
+================================ */
+const SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbyPat4Q7LTdv3985ABPYVeMMeEnVUbsFCIBrzhYOmz2EHcr41JFY3W7GA3JM0cslAaN/exec";
 
-/* ===== DROPDOWNS ===== */
+/* ===============================
+   DROPDOWN POPULATION
+================================ */
 const category = document.getElementById("category");
 const subcategory = document.getElementById("subcategory");
 
@@ -83,100 +92,72 @@ category.onchange = () => {
   Object.keys(subs).forEach(s => {
     const o = document.createElement("option");
     o.value = s;
-    o.textContent = s + " - " + subs[s];
+    o.textContent = `${s} - ${subs[s]}`;
     subcategory.appendChild(o);
   });
 };
 
-/* ===== PHONE AUTOSUGGEST ===== */
-fetch(`${SCRIPT_URL}?action=getPhones`)
-.then(r=>r.json())
-.then(data=>{
-  const list=document.getElementById("phoneList");
-  data.forEach(p=>{
-    const o=document.createElement("option");
-    o.value=p;
-    list.appendChild(o);
-  });
-})
-.catch(()=>{});
-
-/* ===== SUBMIT ===== */
+/* ===============================
+   SUBMIT HANDLER
+================================ */
 document.getElementById("woForm").onsubmit = async e => {
   e.preventDefault();
 
   const params = new URLSearchParams({
-    action:"createWO",
-    category:category.value,
-    subcategory:subcategory.value,
-    client:client.value,
-    phone:phone.value,
-    description:description.value,
-    version:version.value || "v0"
+    action: "createWO",
+    category: category.value,
+    subcategory: subcategory.value,
+    client: client.value,
+    phone: phone.value,
+    description: description.value,
+    version: version.value || "v0"
   });
 
   try {
     const res = await fetch(`${SCRIPT_URL}?${params}`);
     const data = await res.json();
 
-    if (!data.filename) {
-      alert("Error: filename not returned from server");
+    if (!data.wo || !data.date) {
+      alert("Backend did not return WO or date");
       return;
     }
 
-// ===== SAFE FINAL FILENAME CONSTRUCTION =====
+    /* ===============================
+       FINAL FILENAME CONSTRUCTION
+       (NUMERIC WO – NO PARSING)
+    ================================ */
 
-// Extract reliable values
-const woFull = data.wo || "";              // e.g. WO-2025-016
-const dateISO = data.date || "";           // e.g. 2025-12-27
+    const woNum = data.wo;        // "001"
+    const dateISO = data.date;    // "2025-12-28"
 
-// Fallback safety
-if (!woFull || !dateISO) {
-  alert("Missing WO or Date from server response");
-  return;
-}
+    const [yyyy, mm, dd] = dateISO.split("-");
+    const shortDate = `${dd}${mm}${yyyy.slice(-2)}`;
 
-// WO short number
-const woNum = woFull.split("-")[2];         // 016
+    const clientName = client.value
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/[^a-zA-Z0-9_-]/g, "");
 
-// Date DDMMYY
-const [yyyy, mm, dd] = dateISO.split("-");
-const shortDate = `${dd}${mm}${yyyy.slice(-2)}`;
+    const desc = description.value
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/[^a-zA-Z0-9_-]/g, "");
 
-// Category & subcategory from form
-const cat = category.value;
-const sub = subcategory.value;
+    const finalFilename =
+      `WO${woNum}_${shortDate}_${category.value}-${subcategory.value}_${clientName}_${desc}_v0`;
 
-// Client
-const clientName = client.value
-  .trim()
-  .replace(/\s+/g, "")
-  .replace(/[^a-zA-Z0-9_-]/g, "");
+    document.getElementById("filename").value = finalFilename;
+    document.getElementById("labelLink").href =
+      `${SCRIPT_URL}?action=printSingle&wo=${encodeURIComponent(woNum)}`;
 
-// Description
-const desc = description.value
-  .trim()
-  .replace(/\s+/g, "")
-  .replace(/[^a-zA-Z0-9_-]/g, "");
-
-// Version
-const ver = version.value || "v0";
-
-// FINAL LOCKED FORMAT
-const finalFilename =
-  `WO${woNum}_${shortDate}_${cat}-${sub}_${clientName}_${desc}_${ver}`;
-
-document.getElementById("filename").value = finalFilename;
-
-    document.getElementById("labelLink").href = data.labelUrl || "#";
     document.getElementById("result").style.display = "block";
 
   } catch (err) {
-    alert("Connection error. Check Apps Script URL.");
+    alert("Connection error. Check Apps Script deployment.");
   }
 };
 
-function copyFilename(){
+function copyFilename() {
   const f = document.getElementById("filename");
   f.select();
   f.setSelectionRange(0, 99999);
